@@ -112,7 +112,52 @@ function openProject(id){
   show("form");
 }
 
+function renderResult(r, quote){
+  const compare = quote > 0 ? quoteCompare(quote, r.low, r.high) : "";
 
+  const details = (r.details || []).map(d => `<li>${d}</li>`).join("");
+  const tips = (current.tips || []).map(t => `<li>${t}</li>`).join("");
+
+  scrResult.innerHTML = `
+    <button class="btn secondary" id="back2">← Back</button>
+
+    <h2 style="margin-top:10px">${current.name} — Estimate</h2>
+
+    <div class="card kpi">
+      <div class="k">
+        <div class="t">Materials</div>
+        <div class="v">${money(r.materials)}</div>
+      </div>
+      <div class="k">
+        <div class="t">Labor</div>
+        <div class="v">${money(r.labor)}</div>
+      </div>
+      <div class="k" style="grid-column:1/-1">
+        <div class="t">Fair total range</div>
+        <div class="v">${money(r.low)} – ${money(r.high)}</div>
+      </div>
+    </div>
+
+    ${compare ? `<div class="card"><strong>Quote check:</strong><br>${compare}</div>` : ""}
+
+    <div class="card">
+      <strong>Details</strong>
+      <ul>${details}</ul>
+    </div>
+
+    <div class="card">
+      <strong>Questions to ask</strong>
+      <ul>${tips}</ul>
+    </div>
+
+    <button class="btn primary" id="new">New estimate</button>
+  `;
+
+  $("back2").onclick = () => show("form");
+  $("new").onclick = renderProjectList;
+
+  show("result");
+}
 
 function quoteCompare(q, low, high){
   if(q < low){
