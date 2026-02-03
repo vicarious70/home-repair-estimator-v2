@@ -8,7 +8,7 @@ const scrResult = $("screenResult");
 
 let current = null;
 let answers = {};
-
+const HISTORY_KEY = "hre_v2_history";
 renderProjectList();
 
 function show(which){
@@ -150,12 +150,41 @@ function renderResult(r, quote){
       <ul>${tips}</ul>
     </div>
 
+    <div class="card">
+      <strong>Saved estimates</strong>
+      <div id="history"></div>
+      <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn secondary" id="save">Save this estimate</button>
+        <button class="btn secondary" id="clearHistory">Clear history</button>
+      </div>
+      <div id="saveMsg" style="margin-top:8px"><small></small></div>
+    </div>
+
     <button class="btn primary" id="new">New estimate</button>
   `;
 
   $("back2").onclick = () => show("form");
   $("new").onclick = renderProjectList;
 
+  $("save").onclick = () => {
+    saveEstimate({
+      ts: Date.now(),
+      projectId: current.id,
+      projectName: current.name,
+      quote,
+      result: r
+    });
+    renderHistory();
+    $("saveMsg").innerHTML = "<small>Saved ✅</small>";
+  };
+
+  $("clearHistory").onclick = () => {
+    localStorage.removeItem(HISTORY_KEY);
+    renderHistory();
+    $("saveMsg").innerHTML = "<small>History cleared.</small>";
+  };
+
+  renderHistory();
   show("result");
 }
 
@@ -170,7 +199,39 @@ function quoteCompare(q, low, high){
   }
   return `Your quote (${money(q)}) is <strong>within</strong> the fair range.`;
 }
+function loadHistory(){
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+  catch { return []; }
+}
 
+function saveEstimate(item){
+  const history = loadHistory();
+  history.unshift(item);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 25)));
+}
+
+function renderHistory(){
+  const host = $("history");
+  if(!host) return;
+
+  const history = loadHistory();
+  if(history.length === 0){
+    host.innerHTML = "<small>No saved estimates yet.</small>";
+    return;
+  }
+
+  host.innerHTML = history.map(h => {
+    const dt = new Date(h.ts).toLocaleString();
+    return `
+      <div class="card" style="margin-top:10px">
+        <strong>${h.projectName}</strong><br>
+        <small>${dt}</small><br>
+        Range: ${money(h.result.low)} – ${money(h.result.high)}
+        ${h.quote ? `<br>Quote: ${money(h.quote)}` : ""}
+      </div>
+    `;
+  }).join("");
+}
 function money(x){
   return `$${Math.round(x).toLocaleString()}`;
 }
